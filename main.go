@@ -26,12 +26,10 @@ func main() {
 		c.JSON(http.StatusOK, "healthy")
 	})
 
-	// Ruta para agregar nuevos endpoints
 	r.POST("/add-endpoint", func(c *gin.Context) {
 		addEndpoint(c)
 	})
 
-	// Ruta para eliminar endpoints
 	r.POST("/remove-endpoint", func(c *gin.Context) {
 		removeEndpoint(c)
 	})
