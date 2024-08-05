@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"sync"
@@ -60,10 +59,10 @@ func removeEndpoint(c *gin.Context) {
 
 func addEndpoint(c *gin.Context) {
 	var routeRequest struct {
-		Method  string `json:"method"`
-		Pattern string `json:"pattern"`
-		Body    string `json:"body"`
-		Status  int    `json:"status"`
+		Method  string      `json:"method"`
+		Pattern string      `json:"pattern"`
+		Body    interface{} `json:"body"`
+		Status  int         `json:"status"`
 	}
 
 	if err := c.ShouldBindJSON(&routeRequest); err != nil {
@@ -71,14 +70,19 @@ func addEndpoint(c *gin.Context) {
 		return
 	}
 
-	var response map[string]interface{}
-	if err := json.Unmarshal([]byte(routeRequest.Body), &response); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al decodificar JSON"})
+	if routeRequest.Status < 100 || routeRequest.Status > 599 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "status code not supported"})
+		return
+	}
+
+	bodyMap, ok := routeRequest.Body.(map[string]interface{})
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid body format"})
 		return
 	}
 
 	handler := func(c *gin.Context) {
-		c.JSON(routeRequest.Status, response)
+		c.JSON(routeRequest.Status, bodyMap)
 	}
 
 	dynamicRoutesMu.Lock()
