@@ -21,7 +21,7 @@ var (
 func main() {
 	r := gin.Default()
 
-	r.GET("/healthcheck", func(c *gin.Context) {
+	r.GET("/", func(c *gin.Context) {
 		c.Status(http.StatusOK)
 		c.JSON(http.StatusOK, "healthy")
 	})
