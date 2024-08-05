@@ -3,7 +3,7 @@ Mocker is a tool to create mocks for emulate third-party api rest's response
 
 ### Setup
 #### Install Go
-> install go >= 1.16
+> install go >= 1.20
 
 #### Run tidy
 > go mod tidy
@@ -22,3 +22,6 @@ Mocker is a tool to create mocks for emulate third-party api rest's response
 > curl -X POST http://{host}:{port}/remove-endpoint -H "Content-Type: application/json" -d '{
 >"pattern": "/my-new-endpoint",
 >}'
+
+> You can import these curls on postman
+> base path is: [mocker](https://disciplinary-corinna-gusmartinez-dev-aba94555.koyeb.app/)
