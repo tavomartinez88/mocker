@@ -21,56 +21,17 @@ var (
 func main() {
 	r := gin.Default()
 
-	// Ruta para agregar nuevos endpoints
-	r.POST("/add-endpoint", func(c *gin.Context) {
-		var routeRequest struct {
-			Method  string `json:"method"`
-			Pattern string `json:"pattern"`
-			Body    string `json:"body"`
-			Status  int    `json:"status"`
-		}
-
-		if err := c.ShouldBindJSON(&routeRequest); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		var response map[string]interface{}
-		if err := json.Unmarshal([]byte(routeRequest.Body), &response); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al decodificar JSON"})
-			return
-		}
-
-		handler := func(c *gin.Context) {
-			c.JSON(routeRequest.Status, response)
-		}
-
-		dynamicRoutesMu.Lock()
-		dynamicRoutes[routeRequest.Pattern] = dynamicRoute{
-			method:  routeRequest.Method,
-			pattern: routeRequest.Pattern,
-			handler: handler,
-		}
-		dynamicRoutesMu.Unlock()
-
-		c.JSON(http.StatusOK, gin.H{"message": "Endpoint added"})
+	r.GET("/healthcheck", func(c *gin.Context) {
+		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, "healthy")
 	})
 
-	// Ruta para eliminar endpoints
+	r.POST("/add-endpoint", func(c *gin.Context) {
+		addEndpoint(c)
+	})
+
 	r.POST("/remove-endpoint", func(c *gin.Context) {
-		var route struct {
-			Pattern string `json:"pattern"`
-		}
-		if err := c.ShouldBindJSON(&route); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		dynamicRoutesMu.Lock()
-		delete(dynamicRoutes, route.Pattern)
-		dynamicRoutesMu.Unlock()
-
-		c.JSON(http.StatusOK, gin.H{"message": "Endpoint removed"})
+		removeEndpoint(c)
 	})
 
 	handlerDynamicRoutes(r)
@@ -79,6 +40,56 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func removeEndpoint(c *gin.Context) {
+	var route struct {
+		Pattern string `json:"pattern"`
+	}
+	if err := c.ShouldBindJSON(&route); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	dynamicRoutesMu.Lock()
+	delete(dynamicRoutes, route.Pattern)
+	dynamicRoutesMu.Unlock()
+
+	c.JSON(http.StatusOK, gin.H{"message": "Endpoint removed"})
+}
+
+func addEndpoint(c *gin.Context) {
+	var routeRequest struct {
+		Method  string `json:"method"`
+		Pattern string `json:"pattern"`
+		Body    string `json:"body"`
+		Status  int    `json:"status"`
+	}
+
+	if err := c.ShouldBindJSON(&routeRequest); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var response map[string]interface{}
+	if err := json.Unmarshal([]byte(routeRequest.Body), &response); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al decodificar JSON"})
+		return
+	}
+
+	handler := func(c *gin.Context) {
+		c.JSON(routeRequest.Status, response)
+	}
+
+	dynamicRoutesMu.Lock()
+	dynamicRoutes[routeRequest.Pattern] = dynamicRoute{
+		method:  routeRequest.Method,
+		pattern: routeRequest.Pattern,
+		handler: handler,
+	}
+	dynamicRoutesMu.Unlock()
+
+	c.JSON(http.StatusOK, gin.H{"message": "Endpoint added"})
 }
 
 func handlerDynamicRoutes(r *gin.Engine) gin.IRoutes {
