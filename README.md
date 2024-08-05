@@ -3,7 +3,7 @@ Mocker is a tool to create mocks for emulate third-party api rest's response
 
 ### Setup
 #### Install Go
-> install go >= 1.22
+> install go >= 1.16
 
 #### Run tidy
 > go mod tidy
